@@ -4,10 +4,10 @@
 SHELL:=/bin/bash
 CURRENT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-MODEL_SIZE ?= n
+MODEL_SIZE ?= s
 IMAGE_SIZE ?= 640
-BATCH_SIZE ?= 16
-EPOCHS ?= 20
+BATCH_SIZE ?= 64
+EPOCHS ?= 30
 
 
 MODEL_NAME = yolo11${MODEL_SIZE}
@@ -24,7 +24,18 @@ DOCKER_RUN_PARAMS= \
 	-it --rm -a stdout -a stderr  \
 	-v ${CURRENT_DIR}:/workspace \
 	-v /tmp/.X11-unix:/tmp/.X11-unix  -v ${HOME}/.Xauthority:/home/root/.Xauthority \
+	-e HTTP_PROXY=$(HTTP_PROXY) \
+	-e HTTPS_PROXY=$(HTTPS_PROXY) \
+	-e NO_PROXY=$(NO_PROXY) \
 	${DOCKER_IMAGE_NAME}
+
+DOCKER_BUILD_PARAMS := \
+	--rm \
+	--network=host \
+	--build-arg http_proxy=$(HTTP_PROXY) \
+	--build-arg https_proxy=$(HTTPS_PROXY) \
+	--build-arg no_proxy=$(NO_PROXY) \
+	-t $(DOCKER_IMAGE_NAME) . 
 	
 #----------------------------------------------------------------------------------------------------------------------
 # Targets
@@ -34,7 +45,7 @@ default: train
 
 build:
 	@$(call msg, Building Docker image ${DOCKER_IMAGE_NAME} ...)
-	@docker build . -t ${DOCKER_IMAGE_NAME}
+	@docker build ${DOCKER_BUILD_PARAMS}
 
 train: build
 	@$(call msg, Training the ${MODEL_NAME} model for helmet detection ...)

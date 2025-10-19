@@ -54,7 +54,7 @@ train_helmet: build
 	@docker run ${DOCKER_RUN_PARAMS} \
 		yolo detect train \
 			model=${MODEL_NAME}.pt \
-			name=${MODEL_NAME} \
+			name=${MODEL_NAME}_helmet \
 			data=./dataset/helmet/data.yaml \
 			imgsz=${IMAGE_SIZE} \
 			epochs=${EPOCHS} \
@@ -67,7 +67,7 @@ train_qr_code: build
 	@docker run ${DOCKER_RUN_PARAMS} \
 		yolo detect train \
 			model=${MODEL_NAME}.pt \
-			name=${MODEL_NAME} \
+			name=${MODEL_NAME}_qr_code \
 			data=./dataset/qr_code/data.yaml \
 			imgsz=${IMAGE_SIZE} \
 			epochs=${EPOCHS} \

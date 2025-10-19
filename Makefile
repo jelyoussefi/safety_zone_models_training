@@ -6,7 +6,7 @@ CURRENT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
 MODEL_SIZE ?= s
 IMAGE_SIZE ?= 640
-BATCH_SIZE ?= 64
+BATCH_SIZE ?= 1024
 EPOCHS ?= 30
 
 
@@ -23,7 +23,6 @@ export DOCKER_BUILDKIT=1
 DOCKER_RUN_PARAMS= \
 	-it --rm -a stdout -a stderr  \
 	-v ${CURRENT_DIR}:/workspace \
-	-v /tmp/.X11-unix:/tmp/.X11-unix  -v ${HOME}/.Xauthority:/home/root/.Xauthority \
 	-e HTTP_PROXY=$(HTTP_PROXY) \
 	-e HTTPS_PROXY=$(HTTPS_PROXY) \
 	-e NO_PROXY=$(NO_PROXY) \
@@ -40,39 +39,41 @@ DOCKER_BUILD_PARAMS := \
 #----------------------------------------------------------------------------------------------------------------------
 # Targets
 #----------------------------------------------------------------------------------------------------------------------
-default: train
-.PHONY: build download-dataset train monitor export
+default: all
+.PHONY: build train_helmet train_qr_code
+
+all: train_helmet train_qr_code
 
 build:
 	@$(call msg, Building Docker image ${DOCKER_IMAGE_NAME} ...)
 	@docker build ${DOCKER_BUILD_PARAMS}
 
-train: build
+train_helmet: build
 	@$(call msg, Training the ${MODEL_NAME} model for helmet detection ...)
 	@sudo rm -rf ./runs/detect/${MODEL_NAME}*
 	@docker run ${DOCKER_RUN_PARAMS} \
 		yolo detect train \
 			model=${MODEL_NAME}.pt \
 			name=${MODEL_NAME} \
-			data=./dataset/data.yaml \
+			data=./dataset/helmet/data.yaml \
 			imgsz=${IMAGE_SIZE} \
 			epochs=${EPOCHS} \
 			batch=${BATCH_SIZE} \
 			device=${DEVICE}
 
-# Monitoring the training
-monitor:
-	@$(call msg, Starting TensorBoard monitoring ...)
-	@tensorboard --logdir=runs --bind_all --port=6006
-
-# Export the model to different formats
-export:
-	@$(call msg, Exporting ${MODEL_NAME} model ...)
+train_qr_code: build
+	@$(call msg, Training the ${MODEL_NAME} model for qr_code detection ...)
+	@sudo rm -rf ./runs/detect/${MODEL_NAME}*
 	@docker run ${DOCKER_RUN_PARAMS} \
-		yolo task=detect mode=export \
-			model=runs/detect/${MODEL_NAME}/weights/best.pt \
-			format=openvino \
-			imgsz=${IMAGE_SIZE}
+		yolo detect train \
+			model=${MODEL_NAME}.pt \
+			name=${MODEL_NAME} \
+			data=./dataset/qr_code/data.yaml \
+			imgsz=${IMAGE_SIZE} \
+			epochs=${EPOCHS} \
+			batch=${BATCH_SIZE} \
+			device=${DEVICE}
+			
 
 #----------------------------------------------------------------------------------------------------------------------
 # Helper functions

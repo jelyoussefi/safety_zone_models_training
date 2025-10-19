@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ['qr_code']
+
+roboflow:
+  workspace: class-akmwv
+  project: qr-code-80bee
+  version: 2
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/class-akmwv/qr-code-80bee/dataset/2
